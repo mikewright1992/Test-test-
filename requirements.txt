@@ -1,0 +1,7 @@
+# trading_model — no external dependencies for the core analysis engine.
+# All indicators are pure Python (stdlib only).
+# Data fetching is handled by Claude Code via Robinhood MCP tools.
+
+# Optional: for saving/loading data snapshots
+# (already in stdlib — no pip install needed)
+# json, dataclasses, statistics, typing
