@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Dashboard</title>
+<style>
+/* ── Reset & Variables ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #080d14;
+  --surface:    #0f1824;
+  --surface-2:  #162032;
+  --border:     #1e2d3d;
+  --text:       #dde6f0;
+  --muted:      #5a7898;
+  --green:      #22c55e;
+  --green-dim:  #14532d;
+  --red:        #f87171;
+  --red-dim:    #450a0a;
+  --blue:       #60a5fa;
+  --yellow:     #fbbf24;
+  --purple:     #a78bfa;
+  --radius:     10px;
+  --shadow:     0 4px 24px rgba(0,0,0,.5);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── Layout ────────────────────────────────────────────────────────────── */
+.shell { max-width: 1400px; margin: 0 auto; padding: 0 20px 40px; }
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 0 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+
+header h1 { font-size: 18px; font-weight: 600; letter-spacing: .3px; }
+header h1 span { color: var(--blue); }
+
+.header-right { display: flex; align-items: center; gap: 12px; }
+
+#updated {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.btn {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background .15s;
+}
+.btn:hover { background: #1e304a; }
+.btn.primary { background: var(--blue); border-color: var(--blue); color: #000; font-weight: 600; }
+.btn.primary:hover { background: #93c5fd; }
+
+/* ── Summary Cards ─────────────────────────────────────────────────────── */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+
+.card-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.card-value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -.3px;
+}
+
+.card-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.pos  { color: var(--green); }
+.neg  { color: var(--red);   }
+.flat { color: var(--muted); }
+
+/* ── Holdings Table ────────────────────────────────────────────────────── */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--muted);
+}
+
+.table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+  margin-bottom: 28px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+thead th {
+  background: var(--surface-2);
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+  transition: color .15s;
+}
+thead th:hover { color: var(--text); }
+thead th.sorted { color: var(--blue); }
+thead th .sort-arrow { margin-left: 4px; opacity: .4; font-size: 10px; }
+thead th.sorted .sort-arrow { opacity: 1; }
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background .1s;
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--surface-2); }
+
+td {
+  padding: 13px 16px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.sym-cell { display: flex; align-items: center; gap: 10px; }
+.sym-badge {
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: .3px;
+}
+.sym-name {
+  font-size: 12px;
+  color: var(--muted);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.two-line-cell { display: flex; flex-direction: column; }
+.two-line-cell .top { font-weight: 600; }
+.two-line-cell .bot { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+.pct-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 13px;
+}
+.pct-pill.pos { background: var(--green-dim); color: var(--green); }
+.pct-pill.neg { background: var(--red-dim);   color: var(--red);   }
+.pct-pill.flat { background: var(--surface-2); color: var(--muted); }
+
+.val-cell { font-weight: 600; font-size: 14px; text-align: right; }
+
+td:last-child { text-align: right; }
+
+/* ── Analysis Section ──────────────────────────────────────────────────── */
+.analysis-grid {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.search-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.search-card h3 {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+.search-row {
+  display: flex;
+  gap: 8px;
+}
+
+.search-input {
+  flex: 1;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 9px 14px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  outline: none;
+  transition: border-color .15s;
+}
+.search-input::placeholder { text-transform: none; font-weight: 400; font-size: 14px; letter-spacing: 0; color: var(--muted); }
+.search-input:focus { border-color: var(--blue); }
+
+.hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 10px;
+}
+
+/* Signal card */
+.signal-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.signal-placeholder {
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.signal-content { width: 100%; }
+
+.signal-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.action-badge {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 6px 20px;
+  border-radius: 8px;
+}
+.action-badge.BUY  { background: var(--green-dim); color: var(--green); }
+.action-badge.SELL { background: var(--red-dim);   color: var(--red);   }
+.action-badge.HOLD { background: var(--surface-2); color: var(--muted); }
+
+.signal-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.signal-sym { font-size: 18px; font-weight: 700; }
+.signal-price { font-size: 13px; color: var(--muted); }
+
+.score-bar-wrap { margin-bottom: 16px; }
+.score-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.score-track {
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+}
+.score-fill {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 3px;
+  transition: width .4s ease;
+}
+.score-fill.pos { background: var(--green); }
+.score-fill.neg { background: var(--red);   }
+
+.signal-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.pill {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-weight: 600;
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.pill.BULLISH { color: var(--green); border-color: var(--green-dim); background: var(--green-dim); }
+.pill.BEARISH { color: var(--red);   border-color: var(--red-dim);   background: var(--red-dim);   }
+
+.signal-reasons { list-style: none; }
+.signal-reasons li {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 3px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.signal-reasons li::before { content: '·'; color: var(--blue); font-size: 16px; line-height: 1.2; flex-shrink: 0; }
+
+/* ── Loading Spinner ───────────────────────────────────────────────────── */
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  margin: 0 auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Login Modal ───────────────────────────────────────────────────────── */
+.modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.75);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+}
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 32px 36px;
+  width: 360px;
+  box-shadow: var(--shadow);
+}
+.modal h2 { font-size: 18px; margin-bottom: 6px; }
+.modal p  { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.field input {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 10px 14px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color .15s;
+}
+.field input:focus { border-color: var(--blue); }
+
+.modal-error { font-size: 13px; color: var(--red); margin-bottom: 12px; min-height: 18px; }
+.modal .btn  { width: 100%; padding: 11px; font-size: 14px; margin-top: 4px; }
+
+/* ── Toast ─────────────────────────────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 18px;
+  font-size: 13px;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity .3s, transform .3s;
+  pointer-events: none;
+  z-index: 200;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .cards { grid-template-columns: repeat(3, 1fr); }
+  .analysis-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .cards { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Login Modal ───────────────────────────────────────────────────────── -->
+<div class="modal-bg" id="loginModal">
+  <div class="modal">
+    <h2>Connect Robinhood</h2>
+    <p>Enter your credentials. Your session is stored locally and reused — you only need to log in once.</p>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="loginUser" placeholder="you@example.com" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div class="field" id="mfaField" style="display:none">
+      <label>2FA / MFA Code</label>
+      <input type="text" id="loginMfa" placeholder="123456" autocomplete="one-time-code" maxlength="8">
+    </div>
+    <div class="modal-error" id="loginErr"></div>
+    <button class="btn primary" id="loginBtn" onclick="doLogin()">Connect</button>
+  </div>
+</div>
+
+<!-- ── Dashboard ─────────────────────────────────────────────────────────── -->
+<div class="shell" id="dashboard" style="display:none">
+
+  <header>
+    <h1>Portfolio <span>Dashboard</span></h1>
+    <div class="header-right">
+      <span id="updated">Loading…</span>
+      <button class="btn" onclick="loadHoldings(true)">↻ Refresh</button>
+    </div>
+  </header>
+
+  <!-- Summary cards -->
+  <div class="cards">
+    <div class="card">
+      <div class="card-label">Total Value</div>
+      <div class="card-value" id="cTotal">—</div>
+      <div class="card-sub" id="cEquityCash">— equity · — cash</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Today's Gain</div>
+      <div class="card-value" id="cDayDollar">—</div>
+      <div class="card-sub" id="cDayPct">—</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Total Unrealized P&L</div>
+      <div class="card-value" id="cTotalPnl">—</div>
+      <div class="card-sub" id="cTotalPct">—</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Cash</div>
+      <div class="card-value" id="cCash">—</div>
+      <div class="card-sub">Buying Power</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Positions</div>
+      <div class="card-value" id="cPositions">—</div>
+      <div class="card-sub">across all accounts</div>
+    </div>
+  </div>
+
+  <!-- Holdings Table -->
+  <div class="section-header">
+    <div class="section-title">Holdings</div>
+  </div>
+
+  <div class="table-wrap">
+    <table id="holdingsTable">
+      <thead>
+        <tr>
+          <th onclick="sortBy('symbol')">Symbol <span class="sort-arrow">↕</span></th>
+          <th onclick="sortBy('shares')">Shares <span class="sort-arrow">↕</span></th>
+          <th onclick="sortBy('avg_cost')">Avg Cost <span class="sort-arrow">↕</span></th>
+          <th onclick="sortBy('price')">Price <span class="sort-arrow">↕</span></th>
+          <th onclick="sortBy('day_pct')">Today <span class="sort-arrow">↕</span></th>
+          <th onclick="sortBy('total_pct')">Total P&amp;L <span class="sort-arrow">↕</span></th>
+          <th onclick="sortBy('mkt_val')">Value <span class="sort-arrow">↕</span></th>
+        </tr>
+      </thead>
+      <tbody id="holdingsTbody">
+        <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted)">
+          <div class="spinner"></div>
+        </td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Analysis -->
+  <div class="section-header">
+    <div class="section-title">Trading Model Analysis</div>
+  </div>
+
+  <div class="analysis-grid">
+    <div class="search-card">
+      <h3>Analyze a Symbol</h3>
+      <div class="search-row">
+        <input class="search-input" type="text" id="searchInput"
+               placeholder="Enter ticker (e.g. AAPL)"
+               onkeydown="if(event.key==='Enter') doAnalyze()">
+        <button class="btn primary" onclick="doAnalyze()">Analyze</button>
+      </div>
+      <div class="hint">
+        Runs RSI · MACD · Bollinger Bands · EMA · Volume on 3-month daily data.
+        Scores range from &minus;5 (strong sell) to +5 (strong buy).
+        BUY threshold: ≥ +3 · SELL threshold: ≤ &minus;3.
+      </div>
+    </div>
+
+    <div class="signal-card" id="signalCard">
+      <div class="signal-placeholder">
+        Enter a ticker above to run the trading model.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let _holdings  = [];
+let _sortCol   = 'mkt_val';
+let _sortAsc   = false;
+let _mfaPending = false;
+
+// ── Utility ────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+function fmt$(n, decimals = 2) {
+  if (n == null) return '—';
+  const abs = Math.abs(n), sign = n < 0 ? '-' : n > 0 ? '+' : '';
+  if (abs >= 1e6) return sign + '$' + (abs / 1e6).toFixed(2) + 'M';
+  if (abs >= 1e3) return sign + '$' + abs.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  return sign + '$' + abs.toFixed(decimals);
+}
+
+function fmtPct(n) {
+  if (n == null) return '—';
+  return (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
+}
+
+function colorClass(n) {
+  if (n > 0.01) return 'pos';
+  if (n < -0.01) return 'neg';
+  return 'flat';
+}
+
+function showToast(msg, ms = 3000) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), ms);
+}
+
+// ── Auth ───────────────────────────────────────────────────────────────────
+async function checkAuth() {
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    if (d.authenticated) {
+      showDashboard();
+    } else {
+      $('loginModal').style.display = 'flex';
+    }
+  } catch {
+    $('loginModal').style.display = 'flex';
+  }
+}
+
+async function doLogin() {
+  const btn = $('loginBtn');
+  btn.disabled = true;
+  btn.textContent = 'Connecting…';
+  $('loginErr').textContent = '';
+
+  const body = {
+    username: $('loginUser').value.trim(),
+    password: $('loginPass').value,
+  };
+  if (_mfaPending) body.mfa_code = $('loginMfa').value.trim();
+
+  try {
+    const r  = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const d = await r.json();
+
+    if (d.status === 'ok') {
+      showDashboard();
+    } else if (d.status === 'mfa_required') {
+      _mfaPending = true;
+      $('mfaField').style.display = 'block';
+      $('loginMfa').focus();
+      $('loginErr').textContent = 'Check your authenticator app or SMS for a code.';
+    } else {
+      $('loginErr').textContent = d.message || 'Login failed.';
+    }
+  } catch (e) {
+    $('loginErr').textContent = 'Could not reach server. Is app.py running?';
+  }
+
+  btn.disabled = false;
+  btn.textContent = _mfaPending ? 'Submit Code' : 'Connect';
+}
+
+function showDashboard() {
+  $('loginModal').style.display = 'none';
+  $('dashboard').style.display = 'block';
+  loadHoldings();
+}
+
+// ── Holdings ───────────────────────────────────────────────────────────────
+async function loadHoldings(force = false) {
+  try {
+    const r = await fetch('/api/holdings' + (force ? '?force=1' : ''));
+    if (r.status === 401) { $('loginModal').style.display = 'flex'; return; }
+    const d = await r.json();
+    if (d.error && !d.holdings.length) {
+      showToast('Error: ' + d.error);
+      return;
+    }
+    _holdings = d.holdings || [];
+    renderSummary(d.summary || {});
+    renderTable();
+    $('updated').textContent = 'Updated ' + (d.summary?.updated || '—');
+    if (force) showToast('Portfolio refreshed');
+  } catch (e) {
+    showToast('Refresh failed — is app.py running?');
+  }
+}
+
+function renderSummary(s) {
+  const cc = colorClass;
+  $('cTotal').textContent    = s.total_value != null ? '$' + s.total_value.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
+  $('cEquityCash').textContent = `$${(s.equity||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})} equity · $${(s.cash||0).toFixed(2)} cash`;
+
+  const dd = $('cDayDollar');
+  dd.textContent  = fmt$(s.day_gain);
+  dd.className    = 'card-value ' + cc(s.day_gain);
+  $('cDayPct').textContent   = fmtPct(s.day_gain_pct);
+
+  const tp = $('cTotalPnl');
+  tp.textContent  = fmt$(s.total_pnl);
+  tp.className    = 'card-value ' + cc(s.total_pnl);
+  $('cTotalPct').textContent = fmtPct(s.total_pnl_pct);
+
+  $('cCash').textContent      = s.cash != null ? '$' + (s.cash).toFixed(2) : '—';
+  $('cPositions').textContent = s.positions ?? '—';
+}
+
+function renderTable() {
+  const rows = [..._holdings].sort((a, b) => {
+    const va = a[_sortCol], vb = b[_sortCol];
+    if (typeof va === 'string') return _sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return _sortAsc ? va - vb : vb - va;
+  });
+
+  const tbody = $('holdingsTbody');
+  tbody.innerHTML = rows.map(h => {
+    const dayClass   = colorClass(h.day_pct);
+    const totalClass = colorClass(h.total_pct);
+    return `
+      <tr>
+        <td>
+          <div class="sym-cell">
+            <div>
+              <div class="sym-badge">${h.symbol}</div>
+              <div class="sym-name">${h.name || ''}</div>
+            </div>
+          </div>
+        </td>
+        <td>${h.shares.toFixed(4)}</td>
+        <td>$${h.avg_cost.toFixed(2)}</td>
+        <td><strong>$${h.price.toFixed(2)}</strong></td>
+        <td>
+          <div class="two-line-cell">
+            <div class="top"><span class="pct-pill ${dayClass}">${fmtPct(h.day_pct)}</span></div>
+            <div class="bot ${dayClass}">${fmt$(h.day_dollar)}</div>
+          </div>
+        </td>
+        <td>
+          <div class="two-line-cell">
+            <div class="top"><span class="pct-pill ${totalClass}">${fmtPct(h.total_pct)}</span></div>
+            <div class="bot ${totalClass}">${fmt$(h.total_pnl)}</div>
+          </div>
+        </td>
+        <td class="val-cell">$${h.mkt_val.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      </tr>`;
+  }).join('');
+}
+
+function sortBy(col) {
+  if (_sortCol === col) { _sortAsc = !_sortAsc; }
+  else { _sortCol = col; _sortAsc = false; }
+  // Update header highlights
+  document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
+  const idx = ['symbol','shares','avg_cost','price','day_pct','total_pct','mkt_val'].indexOf(col);
+  if (idx >= 0) {
+    const th = document.querySelectorAll('thead th')[idx];
+    th.classList.add('sorted');
+    th.querySelector('.sort-arrow').textContent = _sortAsc ? '↑' : '↓';
+  }
+  renderTable();
+}
+
+// ── Analysis ───────────────────────────────────────────────────────────────
+async function doAnalyze() {
+  const sym = $('searchInput').value.trim().toUpperCase();
+  if (!sym) return;
+
+  const card = $('signalCard');
+  card.innerHTML = '<div class="spinner"></div>';
+
+  try {
+    const r = await fetch(`/api/analyze/${encodeURIComponent(sym)}`);
+    const d = await r.json();
+
+    if (d.error) {
+      card.innerHTML = `<div class="signal-placeholder" style="color:var(--red)">${d.error}</div>`;
+      return;
+    }
+
+    // Score bar: score ranges -5 to +5, center at 50%
+    const score       = d.score ?? 0;
+    const isPos       = score >= 0;
+    const fillPct     = Math.abs(score) / 5 * 50;    // 0-50%
+    const fillLeft    = isPos ? '50%' : `${50 - fillPct}%`;
+    const fillWidth   = fillPct + '%';
+    const fillClass   = isPos ? 'pos' : 'neg';
+
+    const rsiStr      = d.rsi != null ? `RSI ${d.rsi}` : '';
+    const trendCls    = d.trend || 'NEUTRAL';
+    const actionCls   = d.action || 'HOLD';
+
+    const reasonsHtml = (d.reasons || []).map(r =>
+      `<li>${r}</li>`
+    ).join('');
+
+    card.innerHTML = `
+      <div class="signal-content">
+        <div class="signal-top">
+          <span class="action-badge ${actionCls}">${actionCls}</span>
+          <div class="signal-meta">
+            <div class="signal-sym">${d.symbol}</div>
+            <div class="signal-price">$${(d.price||0).toFixed(2)}</div>
+          </div>
+        </div>
+
+        <div class="score-bar-wrap">
+          <div class="score-label">
+            <span>Strong Sell −5</span>
+            <span>Score: <strong>${score > 0 ? '+' : ''}${score}</strong></span>
+            <span>Strong Buy +5</span>
+          </div>
+          <div class="score-track" style="position:relative; overflow:hidden; height:6px; background:var(--surface-2); border-radius:3px;">
+            <div style="position:absolute; top:50%; left:50%; width:1px; height:100%; background:var(--border); transform:translateY(-50%);"></div>
+            <div class="score-fill ${fillClass}" style="left:${fillLeft}; width:${fillWidth};"></div>
+          </div>
+        </div>
+
+        <div class="signal-pills">
+          <span class="pill ${trendCls}">${trendCls}</span>
+          ${rsiStr ? `<span class="pill">RSI ${d.rsi}</span>` : ''}
+          ${d.indicators?.macd_histogram != null ? `<span class="pill">MACD ${d.indicators.macd_histogram > 0 ? '+' : ''}${Number(d.indicators.macd_histogram).toFixed(3)}</span>` : ''}
+          ${d.indicators?.ema20 != null ? `<span class="pill">EMA20 $${Number(d.indicators.ema20).toFixed(2)}</span>` : ''}
+        </div>
+
+        ${reasonsHtml ? `<ul class="signal-reasons">${reasonsHtml}</ul>` : ''}
+      </div>`;
+  } catch (e) {
+    card.innerHTML = `<div class="signal-placeholder" style="color:var(--red)">Request failed — is app.py running?</div>`;
+  }
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+checkAuth();
+
+// Auto-refresh every 90 seconds while tab is visible
+setInterval(() => {
+  if (!document.hidden) loadHoldings();
+}, 90_000);
+</script>
+</body>
+</html>
