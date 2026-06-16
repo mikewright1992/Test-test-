@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Cup 2026 Dashboard</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="header-inner">
+    <h1>🏆 World Cup 2026 Dashboard</h1>
+    <p class="subtitle">Scores, standings, bracket &amp; our prediction pool</p>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="scores">Scores &amp; Schedule</button>
+  <button class="tab-btn" data-tab="standings">Group Standings</button>
+  <button class="tab-btn" data-tab="bracket">Knockout Bracket</button>
+  <button class="tab-btn" data-tab="pool">Prediction Pool</button>
+</nav>
+
+<main>
+  <section id="tab-scores" class="tab-panel active">
+    <div class="panel-toolbar">
+      <input type="text" id="scores-search" placeholder="Filter by team or group...">
+    </div>
+    <div id="scores-status" class="status-msg">Loading matches…</div>
+    <div id="scores-list" class="card-grid"></div>
+  </section>
+
+  <section id="tab-standings" class="tab-panel">
+    <div id="standings-status" class="status-msg">Loading standings…</div>
+    <div id="standings-grid" class="standings-grid"></div>
+  </section>
+
+  <section id="tab-bracket" class="tab-panel">
+    <div id="bracket-status" class="status-msg">Loading bracket…</div>
+    <div id="bracket-board" class="bracket-board"></div>
+  </section>
+
+  <section id="tab-pool" class="tab-panel">
+    <div class="pool-intro">
+      <p>Pick a final score for each match before kickoff. <strong>3 points</strong> for an exact score, <strong>1 point</strong> for the correct winner/draw, 0 otherwise.</p>
+      <div id="pool-mode-banner" class="banner hidden"></div>
+      <label class="name-field">
+        Your name:
+        <input type="text" id="player-name" placeholder="e.g. Jordan">
+      </label>
+    </div>
+
+    <h2 class="section-title">Leaderboard</h2>
+    <div id="leaderboard" class="leaderboard"></div>
+
+    <h2 class="section-title">Make your picks</h2>
+    <div id="pool-status" class="status-msg">Loading matches…</div>
+    <div id="predictions-list" class="card-grid"></div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>Match data via <a href="https://www.thesportsdb.com/" target="_blank" rel="noopener">TheSportsDB</a>. Built for friends, not for gambling. ⚽</p>
+</footer>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
