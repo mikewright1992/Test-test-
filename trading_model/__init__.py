@@ -9,6 +9,7 @@ from .signals import analyze, Signal
 from .risk import calculate_position_size, check_portfolio_limits, PositionSize
 from .portfolio import PortfolioState, build_portfolio_state
 from .analysis import run_analysis, TradeRecommendation
+from .dca import DCAConfig, DCADecision, plan_dca_purchase, is_down_day
 
 __all__ = [
     "AGENTIC_ACCOUNT",
@@ -20,4 +21,5 @@ __all__ = [
     "calculate_position_size", "check_portfolio_limits", "PositionSize",
     "PortfolioState", "build_portfolio_state",
     "run_analysis", "TradeRecommendation",
+    "DCAConfig", "DCADecision", "plan_dca_purchase", "is_down_day",
 ]

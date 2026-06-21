@@ -43,3 +43,13 @@ WATCHLIST = [
 HISTORICALS_SPAN = "3month"    # 3 months of daily data
 HISTORICALS_INTERVAL = "day"
 HISTORICALS_BOUNDS = "regular" # Regular trading hours only
+
+# DCA (dollar-cost averaging) strategy defaults
+DCA_PARAMS = {
+    "symbol": "VOO",
+    "dollar_amount": 10.00,      # Buy exactly $10 worth per triggered day
+    "account_number": AGENTIC_ACCOUNT,
+    "down_day_threshold_pct": 0.0,  # Price below previous close by any amount counts as "down"
+    "target_hour": 10,           # Target execution time, local market time (ET)
+    "target_minute": 30,
+}
