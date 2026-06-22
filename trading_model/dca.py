@@ -21,7 +21,7 @@ from .config import DCA_PARAMS, AGENTIC_ACCOUNT
 
 @dataclass
 class DCAConfig:
-    symbol: str = DCA_PARAMS["symbol"]
+    symbol: str = DCA_PARAMS["symbols"][0]
     dollar_amount: float = DCA_PARAMS["dollar_amount"]
     account_number: str = DCA_PARAMS["account_number"]
     down_day_threshold_pct: float = DCA_PARAMS["down_day_threshold_pct"]

@@ -1,5 +1,9 @@
 """
-VOO DCA runner — buys $10 of VOO on days it's trading below the prior close.
+DCA runner — buys $10 of each configured symbol on days it's trading below
+its prior close. Currently configured for VOO, MU, WDC (see
+trading_model.config.DCA_PARAMS["symbols"]) — each symbol is evaluated and
+bought independently, so a day where all three are down means three
+separate $10 buys (one per symbol).
 
 This is meant to run unattended once per weekday, around 10:30am ET, via
 your own scheduler (cron / Task Scheduler / launchd) — Claude Code does not
@@ -22,12 +26,12 @@ Setup
 
 Safety
 ------
-- Defaults to --dry-run: prints the decision, places no order. You must
-  pass --live to actually submit a trade.
+- Defaults to --dry-run: prints each symbol's decision, places no orders.
+  You must pass --live to actually submit trades.
 - Hardcoded to the agentic-allowed account only (trading_model.config.AGENTIC_ACCOUNT).
   Any other account number is rejected by DCAConfig.
-- Refuses to buy twice in the same calendar day (checked against
-  data/dca_log.jsonl), even if invoked multiple times.
+- Refuses to buy a given symbol twice in the same calendar day (checked
+  against data/dca_log.jsonl), even if invoked multiple times.
 """
 
 import argparse
@@ -44,7 +48,7 @@ from dotenv import load_dotenv
 load_dotenv(ROOT / '.env')
 load_dotenv(ROOT / 'dashboard' / '.env')
 
-from trading_model.config import AGENTIC_ACCOUNT
+from trading_model.config import AGENTIC_ACCOUNT, DCA_PARAMS
 from trading_model.dca import DCAConfig, plan_dca_purchase, already_ran_today
 
 LOG_PATH = ROOT / 'data' / 'dca_log.jsonl'
@@ -56,32 +60,16 @@ def _log(entry: dict) -> None:
         f.write(json.dumps(entry) + '\n')
 
 
-def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--live', action='store_true',
-                         help='Actually submit the order. Without this flag, runs as a dry run.')
-    parser.add_argument('--symbol', default='VOO')
-    parser.add_argument('--amount', type=float, default=10.00)
-    args = parser.parse_args(argv)
-
+def _run_symbol(rh, symbol: str, amount: float, live: bool, today: date) -> None:
     config = DCAConfig(
-        symbol=args.symbol,
-        dollar_amount=args.amount,
+        symbol=symbol,
+        dollar_amount=amount,
         account_number=AGENTIC_ACCOUNT,
     )
 
-    today = date.today()
     if already_ran_today(LOG_PATH, config.symbol, today):
-        print(f"[{today}] Already bought {config.symbol} today — exiting.")
-        return 0
-
-    import robin_stocks.robinhood as rh
-    rh.login(
-        username=os.getenv('ROBINHOOD_USER', ''),
-        password=os.getenv('ROBINHOOD_PASS', ''),
-        store_session=True,
-        pickle_name='rh_dca',
-    )
+        print(f"[{today}] Already bought {config.symbol} today — skipping.")
+        return
 
     quote = rh.get_quotes([config.symbol])[0]
     current_price = float(quote['last_trade_price'])
@@ -100,20 +88,20 @@ def main(argv=None) -> int:
         'should_buy': decision.should_buy,
         'dollar_amount': decision.dollar_amount,
         'account_number': decision.account_number,
-        'mode': 'live' if args.live else 'dry_run',
+        'mode': 'live' if live else 'dry_run',
     }
 
     if not decision.should_buy:
         log_entry['status'] = 'skipped'
         _log(log_entry)
-        return 0
+        return
 
-    if not args.live:
+    if not live:
         print(f"DRY RUN — would buy ${decision.dollar_amount:.2f} of {decision.symbol} "
               f"in account {decision.account_number}. Re-run with --live to submit.")
         log_entry['status'] = 'dry_run_only'
         _log(log_entry)
-        return 0
+        return
 
     order = rh.orders.order_buy_fractional_by_price(
         decision.symbol,
@@ -121,10 +109,35 @@ def main(argv=None) -> int:
         account_number=decision.account_number,
         timeInForce='gfd',
     )
-    print(f"Order submitted: {order}")
+    print(f"Order submitted for {decision.symbol}: {order}")
     log_entry['status'] = 'filled_or_submitted'
     log_entry['order_response'] = order
     _log(log_entry)
+
+
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--live', action='store_true',
+                         help='Actually submit orders. Without this flag, runs as a dry run.')
+    parser.add_argument('--symbols', default=','.join(DCA_PARAMS["symbols"]),
+                         help='Comma-separated list of symbols to evaluate independently.')
+    parser.add_argument('--amount', type=float, default=DCA_PARAMS["dollar_amount"])
+    args = parser.parse_args(argv)
+
+    symbols = [s.strip().upper() for s in args.symbols.split(',') if s.strip()]
+    today = date.today()
+
+    import robin_stocks.robinhood as rh
+    rh.login(
+        username=os.getenv('ROBINHOOD_USER', ''),
+        password=os.getenv('ROBINHOOD_PASS', ''),
+        store_session=True,
+        pickle_name='rh_dca',
+    )
+
+    for symbol in symbols:
+        _run_symbol(rh, symbol, args.amount, args.live, today)
+
     return 0
 
 
