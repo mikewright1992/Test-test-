@@ -46,10 +46,11 @@ HISTORICALS_BOUNDS = "regular" # Regular trading hours only
 
 # DCA (dollar-cost averaging) strategy defaults.
 # Same "buy the dip" rule applied independently per symbol: each symbol that's
-# down vs. its previous close at check time gets its own $10 buy.
+# down vs. its previous close at check time gets its own $7.50 buy.
+# Max daily spend = dollar_amount * len(symbols) = $7.50 * 3 = $22.50.
 DCA_PARAMS = {
     "symbols": ["VOO", "MU", "WDC"],
-    "dollar_amount": 10.00,      # Buy exactly $10 worth per triggered symbol per day
+    "dollar_amount": 7.50,       # Buy exactly $7.50 worth per triggered symbol per day
     "account_number": AGENTIC_ACCOUNT,
     "down_day_threshold_pct": 0.0,  # Price below previous close by any amount counts as "down"
     "target_hour": 10,           # Target execution time, local market time (ET)

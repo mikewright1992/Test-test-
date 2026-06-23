@@ -1,9 +1,9 @@
 """
-DCA runner — buys $10 of each configured symbol on days it's trading below
+DCA runner — buys $7.50 of each configured symbol on days it's trading below
 its prior close. Currently configured for VOO, MU, WDC (see
 trading_model.config.DCA_PARAMS["symbols"]) — each symbol is evaluated and
 bought independently, so a day where all three are down means three
-separate $10 buys (one per symbol).
+separate $7.50 buys (one per symbol), for a max of $22.50/day.
 
 This is meant to run unattended once per weekday, around 10:30am ET, via
 your own scheduler (cron / Task Scheduler / launchd) — Claude Code does not

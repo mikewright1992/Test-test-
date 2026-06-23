@@ -2,8 +2,8 @@
 DCA (dollar-cost averaging) "buy the dip" strategy.
 
 Rule: on days the target symbol is trading below its previous close at the
-target check time, buy a fixed dollar amount (default $10) of fractional
-shares. On flat/up days, skip. At most one buy per calendar day.
+target check time, buy a fixed dollar amount (default $7.50) of fractional
+shares. On flat/up days, skip. At most one buy per symbol per calendar day.
 
 This module only contains the decision logic — it does not place orders or
 manage scheduling. See dca_runner.py for the script that evaluates this
