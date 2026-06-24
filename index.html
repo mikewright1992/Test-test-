@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Cup Live Dashboard</title>
+    <style>
+        /* --- DESIGN SYSTEM TOKENS --- */
+        :root {
+            --bg-main: #0c0f0e;
+            --bg-card: rgba(20, 26, 24, 0.65);
+            --border-glass: rgba(255, 255, 255, 0.06);
+            --text-primary: #ffffff;
+            --text-secondary: #8e9a95;
+            --accent-neon: #39ff14;
+            --accent-neon-glow: rgba(57, 255, 20, 0.3);
+            --team-home: #006847; /* Mexico Green */
+            --team-away: #cd113b; /* South Korea Red */
+            --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: var(--font-stack);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* --- SCOREBOARD CONTAINER --- */
+        .scoreboard-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-glass);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 680px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        /* --- HEADER BANNER --- */
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-glass);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+
+        .stage-badge {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--accent-neon);
+            font-weight: 700;
+            text-shadow: 0 0 8px var(--accent-neon-glow);
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-neon);
+            border-radius: 50%;
+            animation: pulse 1.8s infinite alternate;
+        }
+
+        /* --- MATCH STATUS BLOCK --- */
+        .match-hero {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 32px 40px;
+        }
+
+        .team-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 30%;
+            text-align: center;
+        }
+
+        .flag {
+            font-size: 3rem;
+            line-height: 1;
+            margin-bottom: 8px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        .team-code {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .team-name {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .score-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 40%;
+        }
+
+        .score-display {
+            font-size: 3.5rem;
+            font-weight: 900;
+            letter-spacing: 4px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .match-clock {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glass);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-neon);
+            margin-top: 8px;
+        }
+
+        /* --- CHRONOLOGICAL TIMELINE --- */
+        .timeline-summary {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 40px 24px 40px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        .events-list {
+            list-style: none;
+            width: 45%;
+        }
+
+        .events-home { text-align: right; }
+        .events-away { text-align: left; }
+
+        .event-item {
+            margin-bottom: 6px;
+        }
+        .event-minute {
+            color: var(--text-primary);
+            font-weight: 600;
+            margin: 0 4px;
+        }
+
+        /* --- DEEP DATA STATS MATRIX --- */
+        .stats-matrix {
+            padding: 24px 40px;
+        }
+
+        .matrix-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .stat-row {
+            margin-bottom: 16px;
+        }
+
+        .stat-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .stat-name {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Center-Out Split Progress Track */
+        .stat-progress-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .fill-home, .fill-away {
+            height: 100%;
+            transition: width 0.5s ease-out;
+        }
+
+        .fill-home {
+            background: var(--team-home);
+            margin-left: auto; /* Align to center-right side of home block */
+            border-radius: 3px 0 0 3px;
+        }
+
+        .fill-away {
+            background: var(--team-away);
+            border-radius: 0 3px 3px 0;
+        }
+
+        .split-divider {
+            width: 2px;
+            height: 100%;
+            background: var(--bg-main);
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes pulse {
+            0% { opacity: 0.4; box-shadow: 0 0 0 rgba(57, 255, 20, 0); }
+            100% { opacity: 1; box-shadow: 0 0 12px var(--accent-neon-glow); }
+        }
+
+        /* --- RESPONSIVE ADJUSTMENTS --- */
+        @media (max-width: 500px) {
+            body {
+                padding: 10px;
+                align-items: flex-start;
+            }
+
+            .scoreboard-card {
+                max-width: 100%;
+                border-radius: 12px;
+            }
+
+            .card-header {
+                padding: 12px 16px;
+                font-size: 0.7rem;
+            }
+
+            .match-hero {
+                padding: 20px 16px;
+            }
+
+            .flag {
+                font-size: 2.2rem;
+                margin-bottom: 4px;
+            }
+
+            .team-code {
+                font-size: 1.1rem;
+            }
+
+            .team-name {
+                font-size: 0.7rem;
+            }
+
+            .score-display {
+                font-size: 2.4rem;
+                letter-spacing: 2px;
+            }
+
+            .match-clock {
+                font-size: 0.75rem;
+                padding: 3px 10px;
+            }
+
+            .timeline-summary {
+                padding: 0 16px 16px 16px;
+                font-size: 0.72rem;
+            }
+
+            .stats-matrix {
+                padding: 16px;
+            }
+
+            .matrix-title {
+                font-size: 0.75rem;
+                margin-bottom: 12px;
+            }
+
+            .stat-labels {
+                font-size: 0.75rem;
+            }
+
+            .stat-row {
+                margin-bottom: 14px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .team-box {
+                width: 28%;
+            }
+
+            .score-center {
+                width: 44%;
+            }
+
+            .flag {
+                font-size: 1.8rem;
+            }
+
+            .score-display {
+                font-size: 2rem;
+                letter-spacing: 1px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scoreboard-card">
+        <!-- Header Section -->
+        <div class="card-header">
+            <div>
+                <span class="stage-badge">Group F</span> &bull; Matchday 3 of 3
+            </div>
+            <div class="live-indicator">
+                <div class="live-dot"></div>
+                <span>Live</span>
+            </div>
+        </div>
+
+        <!-- Scoreboard Face -->
+        <div class="match-hero">
+            <div class="team-box">
+                <div class="flag">🇲🇽</div>
+                <div class="team-code">MEX</div>
+                <div class="team-name">Mexico</div>
+            </div>
+
+            <div class="score-center">
+                <div class="score-display">2 - 1</div>
+                <div class="match-clock">74:12</div>
+            </div>
+
+            <div class="team-box">
+                <div class="flag">🇰🇷</div>
+                <div class="team-code">KOR</div>
+                <div class="team-name">South Korea</div>
+            </div>
+        </div>
+
+        <!-- Chronological Match Goals / Cards -->
+        <div class="timeline-summary">
+            <ul class="events-list events-home">
+                <li class="event-item">H. Lozano <span class="event-minute">24'</span> ⚽</li>
+                <li class="event-item">S. Giménez <span class="event-minute">61'</span> ⚽</li>
+            </ul>
+            <ul class="events-list events-away">
+                <li class="event-item">⚽ <span class="event-minute">41'</span> Son Heung-min</li>
+                <li class="event-item">🟨 <span class="event-minute">55'</span> Hwang In-beom</li>
+            </ul>
+        </div>
+
+        <!-- Advanced Analytics Matrix -->
+        <div class="stats-matrix">
+            <div class="matrix-title">Match Metrics</div>
+
+            <!-- Metric 1: Possession -->
+            <div class="stat-row">
+                <div class="stat-labels">
+                    <span class="val-home">58%</span>
+                    <span class="stat-name">Possession</span>
+                    <span class="val-away">42%</span>
+                </div>
+                <div class="stat-progress-bar">
+                    <div class="fill-home" style="width: 58%;"></div>
+                    <div class="split-divider"></div>
+                    <div class="fill-away" style="width: 42%;"></div>
+                </div>
+            </div>
+
+            <!-- Metric 2: Expected Goals (xG) -->
+            <div class="stat-row">
+                <div class="stat-labels">
+                    <span class="val-home">2.14</span>
+                    <span class="stat-name">Expected Goals (xG)</span>
+                    <span class="val-away">1.05</span>
+                </div>
+                <!-- Normalized progress bar calculated out of roughly total aggregate xG -->
+                <div class="stat-progress-bar">
+                    <div class="fill-home" style="width: 67%;"></div>
+                    <div class="split-divider"></div>
+                    <div class="fill-away" style="width: 33%;"></div>
+                </div>
+            </div>
+
+            <!-- Metric 3: Shots on Target -->
+            <div class="stat-row">
+                <div class="stat-labels">
+                    <span class="val-home">6 (14)</span>
+                    <span class="stat-name">Shots on Target (Total)</span>
+                    <span class="val-away">3 (8)</span>
+                </div>
+                <div class="stat-progress-bar">
+                    <div class="fill-home" style="width: 63%;"></div>
+                    <div class="split-divider"></div>
+                    <div class="fill-away" style="width: 37%;"></div>
+                </div>
+            </div>
+
+            <!-- Metric 4: PPDA -->
+            <div class="stat-row">
+                <div class="stat-labels">
+                    <span class="val-home">8.2</span>
+                    <span class="stat-name">Pressing Intensity (PPDA)</span>
+                    <span class="val-away">12.4</span>
+                </div>
+                <!-- Shorter/Lower PPDA means more intense press (Home team dominating the bar) -->
+                <div class="stat-progress-bar">
+                    <div class="fill-home" style="width: 60%;"></div>
+                    <div class="split-divider"></div>
+                    <div class="fill-away" style="width: 40%;"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>
