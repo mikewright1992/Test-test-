@@ -5,10 +5,12 @@ trading_model.config.DCA_PARAMS["symbols"]) — each symbol is evaluated and
 bought independently, so a day where all three are down means three
 separate $7.50 buys (one per symbol), for a max of $22.50/day.
 
-This is meant to run unattended once per weekday, around 10:30am ET, via
-your own scheduler (cron / Task Scheduler / launchd) — Claude Code does not
-keep a process running in the background, so something on your machine has
-to invoke this on a timer.
+This MUST be scheduled by something outside of Claude Code — a Claude Code
+chat session cannot run unattended for weeks at a time; its in-chat cron
+mechanism is session-only and is reclaimed with the container, so it cannot
+be trusted for daily real-money trades. Use your OS's own scheduler:
+
+  cron (Linux/macOS), Task Scheduler (Windows), or launchd (macOS).
 
 Setup
 -----
@@ -18,10 +20,11 @@ Setup
      ROBINHOOD_PASS=yourpassword
 3. First run interactively once to clear the Robinhood MFA challenge:
      python3 dca_runner.py --dry-run
-   (enter the SMS/app code when prompted; the session is then pickled and
-   reused, same as the dashboard backend.)
-4. Schedule it, e.g. crontab (server/local time must be US/Eastern, or
-   adjust the hour accordingly):
+   (enter the SMS/app code when prompted; the session is then pickled to
+   ~/.tokens/rh_dca.pickle and reused, same as the dashboard backend.)
+4. Schedule it. Easiest: run setup_cron.sh, which installs the crontab line
+   below for you. Or add it yourself — server/local time must be US/Eastern,
+   or adjust the hour for your machine's timezone:
      30 10 * * 1-5  cd /path/to/repo && python3 dca_runner.py --live >> data/dca_cron.log 2>&1
 
 Safety
@@ -32,12 +35,15 @@ Safety
   Any other account number is rejected by DCAConfig.
 - Refuses to buy a given symbol twice in the same calendar day (checked
   against data/dca_log.jsonl), even if invoked multiple times.
+- One symbol's failure (bad quote, API error, order rejection) is logged and
+  skipped — it does not stop the remaining symbols from being evaluated.
 """
 
 import argparse
 import json
 import os
 import sys
+import traceback
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -135,9 +141,26 @@ def main(argv=None) -> int:
         pickle_name='rh_dca',
     )
 
+    failures = []
     for symbol in symbols:
-        _run_symbol(rh, symbol, args.amount, args.live, today)
+        try:
+            _run_symbol(rh, symbol, args.amount, args.live, today)
+        except Exception as e:
+            print(f"ERROR evaluating {symbol}: {e}", file=sys.stderr)
+            traceback.print_exc()
+            failures.append(symbol)
+            _log({
+                'date': today.isoformat(),
+                'timestamp': datetime.now(timezone.utc).isoformat(),
+                'symbol': symbol,
+                'status': 'error',
+                'mode': 'live' if args.live else 'dry_run',
+                'error': str(e),
+            })
 
+    if failures:
+        print(f"Completed with errors on: {', '.join(failures)}", file=sys.stderr)
+        return 1
     return 0
 
 
