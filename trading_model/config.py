@@ -52,7 +52,12 @@ DCA_PARAMS = {
     "symbols": ["VOO", "MU", "WDC"],
     "dollar_amount": 7.50,       # Buy exactly $7.50 worth per triggered symbol per day
     "account_number": AGENTIC_ACCOUNT,
-    "down_day_threshold_pct": 0.0,  # Price below previous close by any amount counts as "down"
+    "down_day_threshold_pct": 0.0,  # Fallback for symbols not listed in "thresholds"
+    "thresholds": {              # Per-symbol minimum drop required to trigger a buy
+        "VOO": 0.0,             # Any red day — ETF benefits from consistent accumulation
+        "MU": 2.0,              # Only buy on a genuine 2%+ drop
+        "WDC": 2.0,             # Same for WDC
+    },
     "target_hour": 10,           # Target execution time, local market time (ET)
     "target_minute": 30,
 }

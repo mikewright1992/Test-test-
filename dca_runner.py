@@ -66,11 +66,12 @@ def _log(entry: dict) -> None:
         f.write(json.dumps(entry) + '\n')
 
 
-def _run_symbol(rh, symbol: str, amount: float, live: bool, today: date) -> None:
+def _run_symbol(rh, symbol: str, amount: float, threshold: float, live: bool, today: date) -> None:
     config = DCAConfig(
         symbol=symbol,
         dollar_amount=amount,
         account_number=AGENTIC_ACCOUNT,
+        down_day_threshold_pct=threshold,
     )
 
     if already_ran_today(LOG_PATH, config.symbol, today):
@@ -141,10 +142,14 @@ def main(argv=None) -> int:
         pickle_name='rh_dca',
     )
 
+    _thresholds = DCA_PARAMS.get("thresholds", {})
+    _default_threshold = DCA_PARAMS["down_day_threshold_pct"]
+
     failures = []
     for symbol in symbols:
+        threshold = _thresholds.get(symbol, _default_threshold)
         try:
-            _run_symbol(rh, symbol, args.amount, args.live, today)
+            _run_symbol(rh, symbol, args.amount, threshold, args.live, today)
         except Exception as e:
             print(f"ERROR evaluating {symbol}: {e}", file=sys.stderr)
             traceback.print_exc()
